@@ -8,6 +8,8 @@ pub struct StrSplit<'haystack, D> {
 
 // need lifetimes here, compiler will keep strsplit around for as long as
 // its inputs are around
+
+// converted to generic strsplit impl for anything that can find itself in a string
 impl<'haystack, D> StrSplit<'haystack, D> {
     pub fn new(haystack: &'haystack str, delimiter: D) -> Self {
         Self {
@@ -50,7 +52,8 @@ impl Delimiter for char {
     fn find_next(&self, s: &str) -> Option<(usize, usize)> {
         s.char_indices()
             .find(|(_, c)| c == self)
-            .map(|(start, _)| (start, start + 1))
+            // start of the delimiter plus length of the delimiter
+            .map(|(start, _)| (start, start + self.len_utf8()))
     }
 }
 
