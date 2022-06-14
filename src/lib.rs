@@ -46,6 +46,14 @@ impl Delimiter for &str {
     }
 }
 
+impl Delimiter for char {
+    fn find_next(&self, s: &str) -> Option<(usize, usize)> {
+        s.char_indices()
+            .find(|(_, c)| c == self)
+            .map(|(start, _)| (start, start + 1))
+    }
+}
+
 pub fn until_char(s: &str, c: char) -> &str {
     let delim = format!("{}", c);
     StrSplit::new(s, &*delim)
