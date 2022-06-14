@@ -1,15 +1,15 @@
 // Lifetimes are for pointers
 // how long does the compiler need to keep it around?
 #[derive(Debug)]
-pub struct StrSplit<'haystack, 'delimiter> {
+pub struct StrSplit<'haystack, D> {
     remainder: Option<&'haystack str>,
-    delimiter: &'delimiter str,
+    delimiter: D,
 }
 
 // need lifetimes here, compiler will keep strsplit around for as long as
 // its inputs are around
-impl<'haystack, 'delimiter> StrSplit<'haystack, 'delimiter> {
-    pub fn new(haystack: &'haystack str, delimiter: &'delimiter str) -> Self {
+impl<'haystack, D> StrSplit<'haystack, D> {
+    pub fn new(haystack: &'haystack str, delimiter: D) -> Self {
         Self {
             remainder: Some(haystack),
             delimiter,
@@ -17,15 +17,22 @@ impl<'haystack, 'delimiter> StrSplit<'haystack, 'delimiter> {
     }
 }
 
-impl<'haystack, 'delimiter> Iterator for StrSplit<'haystack, 'delimiter> {
+pub trait Delimiter {
+    fn find_next(&self, s: &str) -> Option<(usize, usize)>;
+}
+
+impl<'haystack, D> Iterator for StrSplit<'haystack, D>
+where
+    D: Delimiter,
+{
     // need to specify lifetime in Iterator because next returns a pointer
     // how long does it hold onto it?
     type Item = &'haystack str;
     fn next(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder.as_mut()?;
-        if let Some(next_delim) = self.remainder.find(self.delimiter) {
-            let until_delimiter = &remainder[..next_delim];
-            *remainder = &remainder[(next_delim + self.delimiter.len())..];
+        if let Some((delim_start, delim_end)) = self.delimiter.find_next(remainder) {
+            let until_delimiter = &remainder[..delim_start];
+            *remainder = &remainder[delim_end..];
             Some(until_delimiter)
         } else {
             self.remainder.take()
@@ -33,7 +40,7 @@ impl<'haystack, 'delimiter> Iterator for StrSplit<'haystack, 'delimiter> {
     }
 }
 
-fn until_char(s: &str, c: char) -> &str {
+pub fn until_char(s: &str, c: char) -> &str {
     let delim = format!("{}", c);
     StrSplit::new(s, &delim)
         .next()
