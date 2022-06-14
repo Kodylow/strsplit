@@ -40,9 +40,15 @@ where
     }
 }
 
+impl Delimiter for &str {
+    fn find_next(&self, s: &str) -> Option<(usize, usize)> {
+        s.find(self).map(|start| (start, start + self.len()))
+    }
+}
+
 pub fn until_char(s: &str, c: char) -> &str {
     let delim = format!("{}", c);
-    StrSplit::new(s, &delim)
+    StrSplit::new(s, &*delim)
         .next()
         .expect("StrSplit always returns at least one result")
 }
